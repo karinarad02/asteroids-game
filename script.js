@@ -1,505 +1,520 @@
-
-const canvas = document.getElementById("canvas-joc");
+const canvas = document.getElementById("canvas-game");
 const ctx = canvas.getContext("2d");
 
 const ship = {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
-    unghi: 0,
-    viteza: 0, 
-    vitezaRotatie: 5,
-    // indicator pentru tragerea rachetelor
-    trage: false, 
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  angle: 0,
+  speed: 0,
+  rotationSpeed: 5,
+  // rocket firing indicator
+  isFiring: false,
 };
 
-const asteroizi = [];
-const rachete = [];
-let scor = 0; 
-let vieti = 3;
-// numarul de puncte necesare pentru a obtine o viata suplimentara
-const punctePentruVieti = 50; 
+const asteroids = [];
+const rockets = [];
+let score = 0;
+let lives = 3;
+// points needed for an extra life
+const pointsForExtraLife = 50;
 
-let numeJucator = "";
-let scoruri = [];
+let playerName = "";
+let highScores = [];
 
-const LOCAL_STORAGE_KEY = "scoruri";
+const LOCAL_STORAGE_KEY = "highScores";
 
-const listaScoruri = document.getElementById("lista-scoruri");
+const scoresList = document.getElementById("scores-list");
 
-function afiseazaScoruri() {
-    listaScoruri.innerHTML = "";
+function displayHighScores() {
+  scoresList.innerHTML = "";
 
-    // obtinem scorurile si numele jucatorului din memoria locala (localStorage)
-    const scoruriSalvate = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (scoruriSalvate) {
-        const dateSalvate = JSON.parse(scoruriSalvate);
-        scoruri = dateSalvate.scoruri;
-        numeJucator = dateSalvate.numeJucator;
-    }
+  // retrieve scores and player name from local storage
+  const savedScores = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (savedScores) {
+    const savedData = JSON.parse(savedScores);
+    highScores = savedData.scores;
+    playerName = savedData.playerName;
+  }
 
-    // sortam scorurile in ordine descrescatoare
-    scoruri.sort((a, b) => b.scor - a.scor);
+  // sort scores in descending order
+  highScores.sort((a, b) => b.score - a.score);
 
-    // afisam scorurile in elementul HTML
-    if (scoruri.length > 0) {
-        listaScoruri.innerHTML = scoruri
-            .map((entry, index) => `<li>${index + 1}. ${entry.name}: ${entry.scor}</li>`)
-            .join("");
-    } else {
-        listaScoruri.innerHTML = "<li>Niciun scor obtinut inca.</li>";
-    }
+  // display scores in the HTML element
+  if (highScores.length > 0) {
+    scoresList.innerHTML = highScores
+      .map(
+        (entry, index) => `<li>${index + 1}. ${entry.name}: ${entry.score}</li>`
+      )
+      .join("");
+  } else {
+    scoresList.innerHTML = "<li>No scores yet.</li>";
+  }
 }
 
-function salveazaScoruri() {
-    // cautam sa vedem daca jucatorul exista deja in array-ul de scoruri
-    const indexJucatorExistent = scoruri.findIndex((entry) => entry.name === numeJucator);
+function saveHighScores() {
+  // check if the player already exists in the scores array
+  const existingPlayerIndex = highScores.findIndex(
+    (entry) => entry.name === playerName
+  );
 
-    if (indexJucatorExistent !== -1) {
-        // daca jucatorul exista, actualizam doar scorul daca noul scor este mai mare
-        if (scor > scoruri[indexJucatorExistent].scor) {
-            scoruri[indexJucatorExistent].scor = scor;
-        }
-    } else {
-        // daca jucatorul nu exista, il adaugam
-        const jucatorNou = { name: numeJucator, scor };
-        scoruri.push(jucatorNou);
+  if (existingPlayerIndex !== -1) {
+    // if the player exists, update the score only if the new score is higher
+    if (score > highScores[existingPlayerIndex].score) {
+      highScores[existingPlayerIndex].score = score;
     }
+  } else {
+    // if the player does not exist, add them to the array
+    const newPlayer = { name: playerName, score };
+    highScores.push(newPlayer);
+  }
 
-    scoruri.sort((a, b) => b.scor - a.scor);
+  // sort scores in descending order
+  highScores.sort((a, b) => b.score - a.score);
 
-    if (scoruri.length > 5) {
-        // retinem doar primele 5 scoruri
-        scoruri.length = 5; 
-    }
+  if (highScores.length > 5) {
+    // keep only the top 5 scores
+    highScores.length = 5;
+  }
 
-    // salvam scorurile si numele in memoria locala
-    const dateSalvate = { numeJucator, scoruri };
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dateSalvate));
+  // save scores and player name to local storage
+  const savedData = { playerName, scores: highScores };
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(savedData));
 
-    afiseazaScoruri();
+  displayHighScores();
 }
 
+function drawShip() {
+  const { x, y, angle } = ship;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate((Math.PI / 180) * angle);
 
-function deseneazaNava() {
-    const { x, y, unghi } = ship;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate((Math.PI / 180) * unghi);
+  // draw ship outline
+  ctx.beginPath();
+  ctx.moveTo(0, -15);
+  ctx.lineTo(10, 10);
+  ctx.lineTo(-10, 10);
+  ctx.closePath();
 
-    // deseneaza conturul navei
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawAsteroids() {
+  for (const asteroid of asteroids) {
+    const { x, y, value } = asteroid;
     ctx.beginPath();
-    ctx.moveTo(0, -15);
-    ctx.lineTo(10, 10);
-    ctx.lineTo(-10, 10);
-    ctx.closePath();
+    // position x, position y, radius, fill, circle shape
+    ctx.arc(x, y, 10 + value * 10, 0, Math.PI * 2);
 
+    // random colors for asteroids (shades of red)
+    ctx.fillStyle = `rgb(${255 - value * 50}, 0, 0)`;
+    ctx.fill();
     ctx.strokeStyle = "white";
     ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.restore();
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "white";
+    // value in the middle of the asteroid
+    ctx.fillText(value, x - 5, y + 6);
+  }
 }
 
-function deseneazaAsteroizi() {
-    for (const asteroid of asteroizi) {
-        const { x, y, value } = asteroid;
-        ctx.beginPath();
-        //pozitie x,pozitie y,raza,umplere,forma de cerc
-        ctx.arc(x, y, 10 + value * 10, 0, Math.PI * 2); 
-     
-        // culori aleatorii pentru asteroizi (nuante de rosu)
-        ctx.fillStyle = `rgb(${255 - value * 50}, 0, 0)`; 
-        ctx.fill();
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 2;
-        ctx.font = "16px Arial";
-        ctx.fillStyle = "white";
-        // valoarea din mijlocul asteroidului
-        ctx.fillText(value, x - 5, y + 6); 
-    }
+function generateAsteroid() {
+  // generate asteroid value (1-4)
+  const asteroidValue = Math.floor(Math.random() * 4) + 1;
+  // initial position of the asteroid
+  const asteroidX = Math.random() * canvas.width;
+
+  // distribute asteroids from top and bottom of the screen
+  // asteroid size (radius) <==> (10 + asteroidValue * 10)
+  let asteroidY = 0;
+  // 50% chance to come from the top or bottom
+  if (Math.random() < 0.5) {
+    // coming from the top
+    asteroidY = 0 - (10 + asteroidValue * 10);
+  } else {
+    // coming from the bottom
+    asteroidY = canvas.height + (10 + asteroidValue * 10);
+  }
+
+  // asteroid speed
+  const asteroidSpeed = Math.random() * 3 + 1;
+
+  asteroids.push({
+    initialX: asteroidX,
+    initialY: asteroidY,
+    x: asteroidX,
+    y: asteroidY,
+    value: asteroidValue,
+    speed: asteroidSpeed,
+    isCollision: false,
+  });
 }
 
-function generareAsteroid() {
-    // generam valoarea asteroidului (1-4)
-    const asteroidValue = Math.floor(Math.random() * 4) + 1;
-    // pozitia initiala a asteroidului
-    const asteroidX = Math.random() * canvas.width; 
-     
-    //impartim asteroizii astfel incat sa vina si din partea de sus si din partea de jos a ecranului
-    //marimea asteroidului(raza) <==> (10 + asteroidValue * 10)
-    let asteroidY = 0;
-    //sanse de 50% sa fie de sus sau de jos
-    if (Math.random() < 0.5) {
-        //->vine de sus
-        asteroidY = 0 - (10 + asteroidValue * 10);
-    } else {
-        //->vine de jos
-        asteroidY = canvas.height + (10 + asteroidValue * 10);
+function updateAsteroids() {
+  // 4% chance to appear for enough time between appearances
+  if (Math.random() < 0.004) {
+    generateAsteroid();
+  }
+
+  // depending on the initial position of the asteroid, we will move it on the screen
+  asteroids.forEach((asteroid, index) => {
+    // update position
+    if (asteroid.initialY < 0) {
+      // (top to bottom)
+      asteroid.y += asteroid.speed;
+    }
+    if (asteroid.initialY > 0) {
+      // (bottom to top)
+      asteroid.y -= asteroid.speed;
+    }
+    if (asteroid.initialX < 200) {
+      // (left to right)
+      asteroid.x += asteroid.speed;
+    }
+    if (asteroid.initialX > 600) {
+      // (right to left)
+      asteroid.x -= asteroid.speed;
     }
 
-    // viteza asteroidului
-    const vitezaAsteroid = Math.random() * 3 + 1; 
-
-    asteroizi.push({
-        initialx: asteroidX,
-        initialy:asteroidY,
-        x: asteroidX,
-        y: asteroidY,
-        value: asteroidValue,
-        viteza: vitezaAsteroid,
-        inColiziune:false
-    });
+    // remove asteroids that have gone off-screen
+    if (
+      asteroid.x < -10 - asteroid.value * 10 ||
+      asteroid.x > canvas.width + (10 + asteroid.value * 10) ||
+      asteroid.y < -10 - asteroid.value * 10 ||
+      asteroid.y > canvas.height + (10 + asteroid.value * 10)
+    ) {
+      asteroids.splice(index, 1);
+    }
+  });
 }
 
-function updateAsteroizi() {
-
-    //sansa de 4% sa apara ca sa fie timp suficient intre aparitii
-    if (Math.random() < 0.004) {
-        generareAsteroid();
-    }
-
-    // in functie de pozitia initiala a asteroidului, il vom deplasa pe ecran
-    asteroizi.forEach((asteroid, index) => {
-
-        //actualizare pozitie
-        if (asteroid.initialy < 0) {
-            //(sus->jos)
-            asteroid.y += asteroid.viteza;
-        }
-        if (asteroid.initialy > 0) {
-            //(jos->sus)
-            asteroid.y -= asteroid.viteza;
-        }
-        if (asteroid.initialx < 200) {
-            //(stanga->dreapta)
-            asteroid.x += asteroid.viteza
-        }
-        if (asteroid.initialx > 600) {
-            //(dreapta->stanga)
-            asteroid.x -= asteroid.viteza
-        }
-
-        // eliminam asteroizii care au iesit din ecran
-        if ((asteroid.x < -10 - asteroid.value * 10) || (asteroid.x > canvas.width + (10 + asteroid.value * 10)) || (asteroid.y < -10 - asteroid.value * 10) || (asteroid.y>canvas.height + (10 + asteroid.value * 10))) {
-            asteroizi.splice(index, 1); 
-        }
-
-    });
+function drawRockets() {
+  for (const rocket of rockets) {
+    const { x, y } = rocket;
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = "white";
+    ctx.fill();
+  }
 }
 
-function deseneazaRachete() {
-    for (const rocket of rachete) {
-        const { x, y } = rocket;
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = "white";
-        ctx.fill();
+function checkCollisions() {
+  // check collision between asteroids
+  for (let i = 0; i < asteroids.length; i++) {
+    for (let j = i + 1; j < asteroids.length; j++) {
+      const asteroid1 = asteroids[i];
+      const asteroid2 = asteroids[j];
+
+      const distanceSquared =
+        (asteroid1.x - asteroid2.x) ** 2 + (asteroid1.y - asteroid2.y) ** 2;
+      const sumOfRadii = 10 + asteroid1.value * 10 + 10 + asteroid2.value * 10;
+      const sumOfRadiiSquared = sumOfRadii ** 2;
+
+      // compare with sum of radii squared to avoid square root
+      if (distanceSquared <= sumOfRadiiSquared) {
+        // change direction on collision
+        asteroid1.initialX = -asteroid1.initialX;
+        asteroid1.initialY = -asteroid1.initialY;
+        asteroid2.initialX = -asteroid2.initialX;
+        asteroid2.initialY = -asteroid2.initialY;
+
+        // avoid overlap
+        const overlap = sumOfRadii - Math.sqrt(distanceSquared);
+        // overlap angle
+        const angle = Math.atan2(
+          asteroid1.y - asteroid2.y,
+          asteroid1.x - asteroid2.x
+        );
+        const displacementX = (overlap / 2) * Math.cos(angle);
+        const displacementY = (overlap / 2) * Math.sin(angle);
+
+        // adjust positions of asteroids to prevent overlap
+        asteroid1.x += displacementX;
+        asteroid1.y += displacementY;
+        asteroid2.x -= displacementX;
+        asteroid2.y -= displacementY;
+      }
     }
-}
+  }
 
-function verificaColiziuni() {
-
-    //verificare coliziune intre asteroizi
-    for (let i = 0; i < asteroizi.length; i++) {
-        for (let j = i + 1; j < asteroizi.length; j++) {
-            const asteroid1 = asteroizi[i];
-            const asteroid2 = asteroizi[j];
-    
-            const distantaLaPatrat = (asteroid1.x - asteroid2.x) ** 2 + (asteroid1.y - asteroid2.y) ** 2;
-            const sumaRaze = 10 + asteroid1.value * 10 + 10 + asteroid2.value * 10;
-            const sumaRazeLaPatrat = sumaRaze ** 2;
-    
-            //comparam cu suma razelor la patrat pentru a evita radicalul
-            if (distantaLaPatrat <= sumaRazeLaPatrat) {
-                // schimbare directie la coliziune
-                asteroid1.initialx = -asteroid1.initialx;
-                asteroid1.initialy = -asteroid1.initialy;
-                asteroid2.initialx = -asteroid2.initialx;
-                asteroid2.initialy = -asteroid2.initialy;
-    
-                // evitare suprapunere
-                const suprapunere = sumaRaze - Math.sqrt(distantaLaPatrat);
-                //unghi de suprapunere
-                const unghi = Math.atan2(asteroid1.y - asteroid2.y, asteroid1.x - asteroid2.x);
-                const deplasamentX = (suprapunere / 2) * Math.cos(unghi);
-                const deplasamentY = (suprapunere / 2) * Math.sin(unghi);
-    
-                //modificam pozitia asteroizilor ca sa nu se suprapuna
-                asteroid1.x += deplasamentX;
-                asteroid1.y += deplasamentY;
-                asteroid2.x -= deplasamentX;
-                asteroid2.y -= deplasamentY;
-            }
+  // check collision between asteroid and ship
+  for (const asteroid of asteroids) {
+    if (!asteroid.isCollision) {
+      const distance = Math.sqrt(
+        (ship.x - asteroid.x) ** 2 + (ship.y - asteroid.y) ** 2
+      );
+      // distance should be less than the circle radius and triangle size
+      if (distance < 20 + asteroid.value * 10) {
+        lives--;
+        asteroid.isCollision = true;
+        if (lives === 0) {
+          // save score to storage
+          saveHighScores();
+          // reset score and lives
+          lives = 3;
+          score = 0;
         }
+        ship.x = canvas.width / 2;
+        ship.y = canvas.height / 2;
+      } else {
+        asteroid.isCollision = false;
+      }
     }
+  }
 
-    //verificare coliziune asteroid cu nava
-    for (const asteroid of asteroizi) {
-        if (!asteroid.inColiziune) {
-            const distance = Math.sqrt((ship.x - asteroid.x) ** 2 + (ship.y - asteroid.y) ** 2);
-            //distanta trebuie sa fie mai mica decat raza cercului si dimensiunea triunghiului
-            if (distance < (20 + asteroid.value * 10)) {
-                vieti--;
-                asteroid.inColiziune = true;
-                if (vieti === 0) {
-                    //salvare scor in storage
-                    salveazaScoruri();
-                    // resetarea scorului si a vietilor
-                    vieti = 3;
-                    scor = 0;
-                }
-                ship.x = canvas.width / 2;
-                ship.y = canvas.height / 2;
-            }else {
-                asteroid.inColiziune = false;
-            }
-        } 
-    }
+  // check if the player has accumulated enough points for an extra life
+  if (score >= pointsForExtraLife && lives < 3) {
+    lives++;
+    score -= pointsForExtraLife;
+  }
 
-    // verificare daca jucatorul a acumulat suficiente puncte pentru o viata suplimentara
-    if (scor >= punctePentruVieti && vieti<3) {
-        vieti++;
-        scor -= punctePentruVieti;
-    }
-
-    //verficare coliziune asteroid cu rachetele navei
-    for (let i = rachete.length - 1; i >= 0; i--) {
-        const rocket = rachete[i];
-        for (let j = asteroizi.length - 1; j >= 0; j--) {
-            const asteroid = asteroizi[j];
-            const distance = Math.sqrt((rocket.x - asteroid.x) ** 2 + (rocket.y - asteroid.y) ** 2);
-            if (distance < 10 + asteroid.value * 10) {
-                // eliminam rachetele care au lovit asteroizii
-                rachete.splice(i, 1);
-                // scadem valoarea asteroidului
-                asteroid.value--; 
-                if (asteroid.value === 0) {
-                    // crestem scorul atunci cand asteroidul este distrus complet
-                    scor += 10;
-                    // eliminam asteroidul distrus
-                    asteroizi.splice(j, 1); 
-                }
-            }
+  // check collision between asteroid and ship rockets
+  for (let i = rockets.length - 1; i >= 0; i--) {
+    const rocket = rockets[i];
+    for (let j = asteroids.length - 1; j >= 0; j--) {
+      const asteroid = asteroids[j];
+      const distance = Math.sqrt(
+        (rocket.x - asteroid.x) ** 2 + (rocket.y - asteroid.y) ** 2
+      );
+      if (distance < 10 + asteroid.value * 10) {
+        // remove rockets that hit asteroids
+        rockets.splice(i, 1);
+        // decrease asteroid value
+        asteroid.value--;
+        if (asteroid.value === 0) {
+          // increase score when asteroid is completely destroyed
+          score += 10;
+          // remove destroyed asteroid
+          asteroids.splice(j, 1);
         }
+      }
     }
+  }
 }
 
 document.addEventListener("keydown", function (event) {
-    //gestionare taste apasate
-    switch (event.key) {
-        case "ArrowUp":
-            // miscare in sus
-            if (ship.y - 20 > 0)ship.y -= 3; 
-            break;
-        case "ArrowDown":
-            // miscare in jos
-            if (ship.y + 12 < canvas.height)ship.y += 3; 
-            break;
-        case "ArrowLeft":
-            // miscare la stanga
-            if (ship.x - 10 > 1)ship.x -= 3; 
-            break;
-        case "ArrowRight":
-            // miscare la dreapta
-            if (ship.x + 10 < canvas.width)ship.x += 3; 
-            break;
-        case "z":
-            // rotire la stanga
-            ship.unghi -= ship.vitezaRotatie; 
-            break;
-        case "c":
-            // rotire la dreapta
-            ship.unghi += ship.vitezaRotatie; 
-            break;
-        case "x":
-            if (rachete.length < 3) {
-                // calculeaza pozitia rachetei si o adauga in array-ul de rachete
-                const rocketX = ship.x + 15 * Math.cos((Math.PI / 180) * (ship.unghi - 90));
-                const rocketY = ship.y + 15 * Math.sin((Math.PI / 180) * (ship.unghi - 90));
-                rachete.push({
-                    x: rocketX,
-                    y: rocketY,
-                    unghi: ship.unghi,
-                });
-            }
-            break;
-    }
+  // handle pressed keys
+  switch (event.key) {
+    case "ArrowUp":
+      // move up
+      if (ship.y - 20 > 0) ship.y -= 3;
+      break;
+    case "ArrowDown":
+      // move down
+      if (ship.y + 12 < canvas.height) ship.y += 3;
+      break;
+    case "ArrowLeft":
+      // move left
+      if (ship.x - 10 > 1) ship.x -= 3;
+      break;
+    case "ArrowRight":
+      // move right
+      if (ship.x + 10 < canvas.width) ship.x += 3;
+      break;
+    case "z":
+      // rotate left
+      ship.angle -= ship.rotationSpeed;
+      break;
+    case "c":
+      // rotate right
+      ship.angle += ship.rotationSpeed;
+      break;
+    case "x":
+      if (rockets.length < 3) {
+        // calculate rocket position and add it to the rockets array
+        const rocketX =
+          ship.x + 15 * Math.cos((Math.PI / 180) * (ship.angle - 90));
+        const rocketY =
+          ship.y + 15 * Math.sin((Math.PI / 180) * (ship.angle - 90));
+        rockets.push({
+          x: rocketX,
+          y: rocketY,
+          angle: ship.angle,
+        });
+      }
+      break;
+  }
 });
 
-function update() {
-    // sterge canvas-ul
-    ctx.clearRect(0, 0, canvas.width, canvas.height); 
+function updateGame() {
+  // clear the canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // actualizeaza pozitia navei pe baza vitezei si unghiului
-    ship.x += ship.viteza * Math.cos((Math.PI / 180) * ship.unghi);
-    ship.y += ship.viteza * Math.sin((Math.PI / 180) * ship.unghi);
+  // update ship position based on speed and angle
+  ship.x += ship.speed * Math.cos((Math.PI / 180) * ship.angle);
+  ship.y += ship.speed * Math.sin((Math.PI / 180) * ship.angle);
 
-    deseneazaNava();
-    deseneazaAsteroizi(); 
-    updateAsteroizi();
-    deseneazaRachete();
+  drawShip();
+  drawAsteroids();
+  updateAsteroids();
+  drawRockets();
 
-    for (let i = rachete.length - 1; i >= 0; i--) {
-        //unghiul initial= 0 (ar trage in dreapta) => scadem 90 de grade
-        rachete[i].x += 5 * Math.cos((Math.PI / 180) * (rachete[i].unghi - 90));
-        rachete[i].y += 5 * Math.sin((Math.PI / 180) * (rachete[i].unghi - 90));
-        // elimina rachetele care ies din ecran
-        if (rachete[i].x < 0 || rachete[i].x > canvas.width || rachete[i].y < 0 || rachete[i].y > canvas.height) {
-            rachete.splice(i, 1);
-        }
+  for (let i = rockets.length - 1; i >= 0; i--) {
+    // initial angle = 0 (shoots to the right) => subtract 90 degrees
+    rockets[i].x += 5 * Math.cos((Math.PI / 180) * (rockets[i].angle - 90));
+    rockets[i].y += 5 * Math.sin((Math.PI / 180) * (rockets[i].angle - 90));
+    // remove rockets that go off-screen
+    if (
+      rockets[i].x < 0 ||
+      rockets[i].x > canvas.width ||
+      rockets[i].y < 0 ||
+      rockets[i].y > canvas.height
+    ) {
+      rockets.splice(i, 1);
     }
+  }
 
-    verificaColiziuni();
+  checkCollisions();
 
-    ctx.font = "20px Arial";
-    ctx.fillStyle = "white";
-    ctx.fillText("Scor: " + scor, 10, 20);
-    ctx.fillText("Vieti: " + vieti, 10, 40);
+  ctx.font = "20px Arial";
+  ctx.fillStyle = "white";
+  ctx.fillText("Score: " + score, 10, 20);
+  ctx.fillText("Lives: " + lives, 10, 40);
 
-    // continua animatia
-    requestAnimationFrame(update); 
+  // continue the animation
+  requestAnimationFrame(updateGame);
 }
 
-
 //////////////////////TOUCHSCREEN///////////////////////////////
-// pentru ecrane < 768px
-//swipe pe ecran=>rotatie nava
-//apasare butoane=>deplasare si tragere
+// for screens < 768px
+// swipe on the screen => rotate ship
+// button press => move and shoot
 let touchStartX = null;
 let touchStartY = null;
 
-// gestionarea evenimentelor de atingere (touch events)
+// handle touch events
 function handleTouchStart(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    const touches = event.changedTouches[0];
-    touchStartX = touches.clientX;
-    touchStartY = touches.clientY;
+  const touches = event.changedTouches[0];
+  touchStartX = touches.clientX;
+  touchStartY = touches.clientY;
 }
 
 function handleTouchMove(event) {
-    if (!touchStartX || !touchStartY) {
-        return;
+  if (!touchStartX || !touchStartY) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const touches = event.changedTouches[0];
+  const touchEndX = touches.clientX;
+  const touchEndY = touches.clientY;
+
+  const deltaX = touchEndX - touchStartX;
+  const deltaY = touchEndY - touchStartY;
+
+  // for ship control
+  const sensitivity = 5;
+
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    if (deltaX > sensitivity) {
+      // rotate right
+      ship.angle += ship.rotationSpeed;
+    } else if (deltaX < -sensitivity) {
+      // rotate left
+      ship.angle -= ship.rotationSpeed;
     }
-
-    event.preventDefault();
-
-    const touches = event.changedTouches[0];
-    const touchEndX = touches.clientX;
-    const touchEndY = touches.clientY;
-
-    const deltaX = touchEndX - touchStartX;
-    const deltaY = touchEndY - touchStartY;
-
-    //pentru controlarea navei
-    const sensibilitate = 5; 
-
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        if (deltaX > sensibilitate) {
-            // rotire la dreapta
-            ship.unghi += ship.vitezaRotatie; 
-        } else if (deltaX < -sensibilitate) {
-            // rotire la stanga
-            ship.unghi -= ship.vitezaRotatie; 
-        }
+  } else {
+    // rotate up or down depending on the initial angle
+    if (ship.angle > 0) {
+      if (deltaY > sensitivity) {
+        ship.angle += ship.rotationSpeed;
+      } else if (deltaY < -sensitivity) {
+        ship.angle -= ship.rotationSpeed;
+      }
     } else {
-        //se roteste in sus sau in jos in functie de unghiul la care se afla initial
-        if (ship.unghi > 0) {
-            if (deltaY > sensibilitate) {
-                ship.unghi += ship.vitezaRotatie;
-            } else if (deltaY < -sensibilitate) {
-                ship.unghi -= ship.vitezaRotatie;
-            }
-        } else {
-            if (deltaY > sensibilitate) {
-                ship.unghi -= ship.vitezaRotatie;
-            } else if (deltaY < -sensibilitate) {
-                ship.unghi += ship.vitezaRotatie;
-            }
-        }
+      if (deltaY > sensitivity) {
+        ship.angle -= ship.rotationSpeed;
+      } else if (deltaY < -sensitivity) {
+        ship.angle += ship.rotationSpeed;
+      }
     }
+  }
 
-    // actualizam coordonatele atingerii initiale pentru urmatoarea miscare
-    touchStartX = touchEndX;
-    touchStartY = touchEndY;
+  // update initial touch coordinates for the next move
+  touchStartX = touchEndX;
+  touchStartY = touchEndY;
 }
 
 function handleTouchEnd(event) {
-    touchStartX = null;
-    touchStartY = null;
+  touchStartX = null;
+  touchStartY = null;
 }
 
 canvas.addEventListener("touchstart", handleTouchStart);
 canvas.addEventListener("touchmove", handleTouchMove);
 canvas.addEventListener("touchend", handleTouchEnd);
 
-const upButton = document.getElementById("buton-sus");
-const downButton = document.getElementById("buton-jos");
-const leftButton = document.getElementById("buton-stanga");
-const rightButton = document.getElementById("buton-dreapta");
-const XButton = document.getElementById("xbuton");
+const upButton = document.getElementById("button-up");
+const downButton = document.getElementById("button-down");
+const leftButton = document.getElementById("button-left");
+const rightButton = document.getElementById("button-right");
+const fireButton = document.getElementById("fire-button");
 
 let moveInterval = null;
 
 function handleUpButtonTouchStart() {
-    moveInterval = setInterval(() => {
-        if (ship.y - 20 > 0) ship.y -= 5;
-    }, 100);
+  moveInterval = setInterval(() => {
+    if (ship.y - 20 > 0) ship.y -= 5;
+  }, 100);
 }
 
 function handleDownButtonTouchStart() {
-    moveInterval = setInterval(() => {
-        if (ship.y + 12 < canvas.height) ship.y += 5;
-    }, 100);
+  moveInterval = setInterval(() => {
+    if (ship.y + 12 < canvas.height) ship.y += 5;
+  }, 100);
 }
 
 function handleLeftButtonTouchStart() {
-    moveInterval = setInterval(() => {
-        if (ship.x - 10 > 1) ship.x -= 5;
-    }, 100);
+  moveInterval = setInterval(() => {
+    if (ship.x - 10 > 1) ship.x -= 5;
+  }, 100);
 }
 
 function handleRightButtonTouchStart() {
-    moveInterval = setInterval(() => {
-        if (ship.x + 10 < canvas.width) ship.x += 5;
-    }, 100);
+  moveInterval = setInterval(() => {
+    if (ship.x + 10 < canvas.width) ship.x += 5;
+  }, 100);
+}
+
+function handleFireButton() {
+  if (rockets.length < 3) {
+    const rocketX = ship.x + 15 * Math.cos((Math.PI / 180) * (ship.angle - 90));
+    const rocketY = ship.y + 15 * Math.sin((Math.PI / 180) * (ship.angle - 90));
+    rockets.push({
+      x: rocketX,
+      y: rocketY,
+      angle: ship.angle,
+    });
+  }
 }
 
 function handleButtonTouchEnd() {
-    clearInterval(moveInterval);
+  clearInterval(moveInterval);
 }
 
-function handleXButton() {
-    if (rachete.length < 3) {
-        const rocketX = ship.x + 15 * Math.cos((Math.PI / 180) * (ship.unghi - 90));
-        const rocketY = ship.y + 15 * Math.sin((Math.PI / 180) * (ship.unghi - 90));
-        rachete.push({
-            x: rocketX,
-            y: rocketY,
-            unghi: ship.unghi,
-        });
-    }
-}
-
-//folosim touchstart si touchend in loc de click pentru a putea tine apasat pe buton
 upButton.addEventListener("touchstart", handleUpButtonTouchStart);
 downButton.addEventListener("touchstart", handleDownButtonTouchStart);
 leftButton.addEventListener("touchstart", handleLeftButtonTouchStart);
 rightButton.addEventListener("touchstart", handleRightButtonTouchStart);
-XButton.addEventListener("touchstart", handleXButton);
+fireButton.addEventListener("touchstart", handleFireButton);
 
 upButton.addEventListener("touchend", handleButtonTouchEnd);
 downButton.addEventListener("touchend", handleButtonTouchEnd);
 leftButton.addEventListener("touchend", handleButtonTouchEnd);
 rightButton.addEventListener("touchend", handleButtonTouchEnd);
 
-
 //////////////////////////////////////////////////////////////////
 
-afiseazaScoruri();
+displayHighScores();
 
-// solicita numele jucatorului la inceputul jocului (la refresh)
-numeJucator = prompt("Introduceti numele jucatorului:");
+// request player's name at the beginning of the game (on refresh)
+playerName = prompt("Enter player name:");
 
-update();
-
+updateGame();

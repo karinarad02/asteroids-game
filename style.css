@@ -13,7 +13,7 @@ canvas {
     border: 1px solid white;
 }
 
-#scoruri {
+#scores {
     background-color: #333;
     color: white;
     padding: 20px;
@@ -22,22 +22,22 @@ canvas {
     height: auto;
 }
 
-#scoruri h2 {
+#scores h2 {
     font-size: 18px;
     margin: 0;
 }
   
-#lista-scoruri {
+#scores-list {
     list-style: none;
     padding: 0;
 }
   
-#lista-scoruri li {
+#scores-list li {
     margin: 5px 0;
     font-size: 16px;
 }
 
-#container-butoane {
+#button-container {
     position: relative;
     bottom: 2%;
     display: flex;
@@ -45,7 +45,7 @@ canvas {
     align-items: center;
 }
 
-.buton {
+.button {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -54,50 +54,48 @@ canvas {
     outline: none;
 }
 
-.sageata-sus{
+.arrow-up {
     transform: rotate(-90deg);
 }
 
-.sageata-jos{
+.arrow-down {
     position: absolute;
     top: 100%;
     transform: rotate(90deg);
 }
 
-.sageata-stanga{
+.arrow-left {
     position: absolute;
     top: 50%;
-    left:-100%;
+    left: -100%;
     transform: rotate(180deg);
 }
 
-.sageata-dreapta{
+.arrow-right {
     position: absolute;
     top: 50%;
     left: 100%;
 }
 
 @media (max-width: 768px){
-    body{
+    body {
         flex-direction: column;
     }
 
-    canvas{
+    canvas {
         aspect-ratio: 5/4;
         width: 500px;
         height: 400px;
     }
 
-    #scoruri ul{
+    #scores-list {
         display: flex;
         gap: 1rem;
     }
 }
 
 @media (min-width: 768px){
-    #container-butoane{
+    #button-container {
         display: none;
     }
 }
-
-

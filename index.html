@@ -1,43 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Joc Asteroids</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Asteroids Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div id="scoruri">
-      <h2>Cele mai bune scoruri</h2>
-      <ul id="lista-scoruri"></ul>
+    <div id="scores">
+      <h2>Top Scores</h2>
+      <ul id="scores-list"></ul>
     </div>
-    <canvas id="canvas-joc" width="800" height="600"></canvas>
-    <!-- pentru touchscreen, ecrane < 768px -->
-    <div id="container-butoane" oncontextmenu="return false;">
+    <canvas id="canvas-game" width="800" height="600"></canvas>
+    <!-- For touchscreen devices with screens less than 768px -->
+    <div id="button-container" oncontextmenu="return false;">
       <img
         src="./media/arrow.svg"
-        alt="sageata-sus"
-        id="buton-sus"
-        class="buton sageata-sus"
+        alt="up-arrow"
+        id="button-up"
+        class="button arrow-up"
       />
-      <img src="./media/XButton.svg" alt="xbuton" id="xbuton" class="buton" />
+      <img src="./media/XButton.svg" alt="x-button" id="fire-button" class="button" />
       <img
         src="./media/arrow.svg"
-        alt="sageata-jos"
-        id="buton-jos"
-        class="buton sageata-jos"
-      />
-      <img
-        src="./media/arrow.svg"
-        alt="sageata-stanga"
-        id="buton-stanga"
-        class="buton sageata-stanga"
+        alt="down-arrow"
+        id="button-down"
+        class="button arrow-down"
       />
       <img
         src="./media/arrow.svg"
-        alt="sageata-dreapta"
-        id="buton-dreapta"
-        class="buton sageata-dreapta"
+        alt="left-arrow"
+        id="button-left"
+        class="button arrow-left"
+      />
+      <img
+        src="./media/arrow.svg"
+        alt="right-arrow"
+        id="button-right"
+        class="button arrow-right"
       />
     </div>
     <script src="script.js"></script>
