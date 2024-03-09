@@ -1,0 +1,103 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: black;
+    gap: 2rem;
+    overflow: hidden;
+}
+
+canvas {
+    border: 1px solid white;
+}
+
+#scoruri {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    border-radius: 5px;
+    width: auto;
+    height: auto;
+}
+
+#scoruri h2 {
+    font-size: 18px;
+    margin: 0;
+}
+  
+#lista-scoruri {
+    list-style: none;
+    padding: 0;
+}
+  
+#lista-scoruri li {
+    margin: 5px 0;
+    font-size: 16px;
+}
+
+#container-butoane {
+    position: relative;
+    bottom: 2%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.buton {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin: 5px;
+    cursor: pointer;
+    outline: none;
+}
+
+.sageata-sus{
+    transform: rotate(-90deg);
+}
+
+.sageata-jos{
+    position: absolute;
+    top: 100%;
+    transform: rotate(90deg);
+}
+
+.sageata-stanga{
+    position: absolute;
+    top: 50%;
+    left:-100%;
+    transform: rotate(180deg);
+}
+
+.sageata-dreapta{
+    position: absolute;
+    top: 50%;
+    left: 100%;
+}
+
+@media (max-width: 768px){
+    body{
+        flex-direction: column;
+    }
+
+    canvas{
+        aspect-ratio: 5/4;
+        width: 500px;
+        height: 400px;
+    }
+
+    #scoruri ul{
+        display: flex;
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 768px){
+    #container-butoane{
+        display: none;
+    }
+}
+
+
