@@ -1,5 +1,9 @@
+# ProiectMultimedia aka MultimediaProject
+
 # RO
+
 ## Joc Asteroizi
+
 ### Descriere: 
 Realizarea unui joc similar cu Asteroizi (https://en.wikipedia.org/wiki/Asteroids_(video_game)) 
 utilizând controlul de tip <canvas> sau controlul de tip <svg>. 
@@ -29,7 +33,9 @@ La atingerea unui număr predefinit de puncte, se va actualiza numărul de ”vi
 - 1p - stocarea celor mai bune 5 scoruri obținute și a numelui jucătorilor cu ajutorul Web Storage API (sau a unui alt API similar)
 
 # EN
+
 ## Asteroids Game
+
 ### Description: 
 Creating a game similar to Asteroids (https://en.wikipedia.org/wiki/Asteroids_(video_game)) using either the <canvas> or <svg> control.
 In cases where standard rules differ from the requirements below, the version specified in the requirements must be implemented.
